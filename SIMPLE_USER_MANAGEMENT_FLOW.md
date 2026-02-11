@@ -6,28 +6,27 @@ User Management REST API Development
 
 ## Objective
 
-Develop a REST API for user management using Go programming language.\
-The API should handle CRUD operations with DB integration and proper
-documentation.
+Develop a REST API for user management using Go.
+The API handles CRUD operations with PostgreSQL integration and Swagger documentation.
 
 ------------------------------------------------------------------------
 
 # Architecture Flow
 
-Request → Handler → Service → Repository → DB → back
+Request -> Handler -> Service -> Repository(sqlc) -> PostgreSQL -> back
 
 ------------------------------------------------------------------------
 
 # 1. Technical Stack
 
--   Programming Language: Go
--   Framework: Chi Router (for handling REST API requests)
--   Database: PostgreSQL (running in Docker)
--   ORM/Query Builder: sqlc
--   Validation Library: go-playground validator
--   API Documentation: OpenAPI
--   Testing: go testing
--   Linting: golangci-lint
+- Programming Language: Go
+- Framework: Chi Router
+- Database: PostgreSQL (Docker)
+- Query Layer: sqlc
+- Validation Library: go-playground/validator
+- API Documentation: OpenAPI + Swagger UI
+- Testing: go test
+- Linting: golangci-lint
 
 ------------------------------------------------------------------------
 
@@ -37,133 +36,155 @@ Request → Handler → Service → Repository → DB → back
 
 Create a REST API that allows:
 
--   Create User
--   Read User
--   Update User
--   Delete User
+- Create User
+- Read User
+- Update User
+- Delete User
 
 ### User Fields
 
--   userId (UUID)
-    -   Primary Key\
-    -   Auto-generated
--   firstName (String)
-    -   Required\
-    -   Min 2, Max 50 characters
--   lastName (String)
-    -   Required\
-    -   Min 2, Max 50 characters
--   email (String)
-    -   Required\
-    -   Valid Email Format
--   phone (String)
-    -   Optional\
-    -   Valid Phone Number
--   age (Integer)
-    -   Optional\
-    -   Positive Integer
--   status (Enum: Active, Inactive)
-    -   Optional\
-    -   Default: Active
+- userId (UUID)
+  - Primary Key
+  - Auto-generated
+- firstName (String)
+  - Required
+  - Min 2, Max 50 characters
+- lastName (String)
+  - Required
+  - Min 2, Max 50 characters
+- email (String)
+  - Required
+  - Valid Email Format
+- phone (String)
+  - Optional
+  - Valid Phone Number
+- age (Integer)
+  - Optional
+  - Positive Integer
+- status (Enum: Active, Inactive)
+  - Optional
+  - Default: Active
 
 ------------------------------------------------------------------------
 
 ## 2.2 API Endpoints
 
--   POST /users → Create user
--   GET /users/{id} → Retrieve user
--   GET /users → List all users
--   PUT /users/{id} → Update user
--   DELETE /users/{id} → Delete user
+- POST /users -> Create user
+- GET /users/{id} -> Retrieve user
+- GET /users -> List all users
+- PUT /users/{id} -> Update user
+- DELETE /users/{id} -> Delete user
 
 ------------------------------------------------------------------------
 
 ## 2.3 Database Configuration
 
--   Use Docker to run PostgreSQL service.
--   Use .env file to provide database connection details.
+- Use Docker to run PostgreSQL service.
+- Use `.env` values for DB connection.
+- Apply migration on startup (users table creation).
 
 ------------------------------------------------------------------------
 
 ## 2.4 Input Validation
 
--   Validate request payload.
--   Return appropriate error responses for invalid inputs.
+- Validate request payload.
+- Return appropriate error responses for invalid inputs.
 
 ------------------------------------------------------------------------
 
-## 2.5 OpenAPI Documentation
+## 2.5 OpenAPI + Swagger
 
--   Generate OpenAPI documentation for the REST API.
--   Provide documentation for each endpoint.
-
-------------------------------------------------------------------------
-
-## 2.6 Response Codes
-
--   Use proper HTTP response codes:
-    -   200 OK
-    -   201 Created
-    -   400 Bad Request
-    -   404 Not Found
-    -   500 Internal Server Error
+- OpenAPI spec file: `docs/openapi.yaml`
+- Swagger UI endpoint: `/swagger/`
+- Raw OpenAPI spec endpoint: `/swagger/openapi.yaml`
 
 ------------------------------------------------------------------------
 
-## 2.7 Testing
+## 2.6 sqlc Integration
 
--   Implement unit tests for service and handler functions.
--   Implement integration tests for database and API endpoints.
+- sqlc config file: `sqlc.yaml`
+- SQL query source: `internal/db/query/users.sql`
+- Generated package path: `internal/db/sqlc`
+- Repository layer uses sqlc queries for all CRUD operations.
 
 ------------------------------------------------------------------------
 
-## 2.8 Linting & Code Quality
+## 2.7 Response Codes
 
--   Use golangci-lint for code linting and formatting.
--   Ensure clean code structure.
+- Use proper HTTP response codes:
+  - 200 OK
+  - 201 Created
+  - 204 No Content
+  - 400 Bad Request
+  - 404 Not Found
+  - 500 Internal Server Error
+
+------------------------------------------------------------------------
+
+## 2.8 Testing
+
+- Unit tests for service and handler
+- Integration tests for DB and API endpoints
+
+------------------------------------------------------------------------
+
+## 2.9 Linting & Code Quality
+
+- Use golangci-lint
+- Maintain clean project structure
 
 ------------------------------------------------------------------------
 
 # Deliverables
 
-1.  Source Code Repository (GitHub or GitLab).
-2.  Docker Setup (Docker Compose for PostgreSQL).
-3.  API Documentation (OpenAPI).
-4.  Unit & Integration Tests.
-5.  Code Quality Report (if required).
+1. Source Code Repository
+2. Docker Setup for PostgreSQL
+3. OpenAPI + Swagger endpoint
+4. sqlc query + generated package integration
+5. Unit and Integration Tests
 
 ------------------------------------------------------------------------
 
-# Layer Responsibility (Request → DB)
+# Layer Responsibility (Request -> DB)
 
 ## Request
 
-Client sends HTTP request to API endpoint.
+Client sends HTTP request.
 
 ## Handler
 
--   Receives request.
--   Validates input.
--   Calls Service layer.
--   Sends response back.
+- Receives request
+- Validates/parses input
+- Calls service
+- Sends HTTP response
 
 ## Service
 
--   Contains business logic.
--   Calls Repository layer.
--   Processes data before returning.
+- Contains business logic
+- Calls repository layer
 
 ## Repository
 
--   Handles database queries using sqlc.
--   Interacts with PostgreSQL.
--   Returns data to Service.
+- Uses sqlc-generated queries
+- Interacts with PostgreSQL
+- Maps DB models to API models
 
 ## DB
 
--   PostgreSQL database.
--   Stores user data.
+- PostgreSQL stores user data
 
 ## Back Flow
 
-DB → Repository → Service → Handler → Response to Client
+DB -> Repository -> Service -> Handler -> Response
+
+------------------------------------------------------------------------
+
+# Local Run Steps
+
+1. `cp .env.example .env`
+2. `docker compose up -d`
+3. `go mod tidy`
+4. `go run ./cmd/server`
+
+Swagger:
+- `http://localhost:8080/swagger/`

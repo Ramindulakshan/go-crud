@@ -2,8 +2,10 @@ package user
 
 import (
 	"context"
+	"database/sql"
 	"errors"
-	"sync"
+
+	db "go-crud/internal/db/sqlc"
 
 	"github.com/google/uuid"
 )
@@ -18,93 +20,122 @@ type Repository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-type InMemoryRepository struct {
-	mu    sync.RWMutex
-	users map[uuid.UUID]User
+type PostgresRepository struct {
+	q *db.Queries
 }
 
-func NewInMemoryRepository() *InMemoryRepository {
-	return &InMemoryRepository{users: make(map[uuid.UUID]User)}
+func NewPostgresRepository(q *db.Queries) *PostgresRepository {
+	return &PostgresRepository{q: q}
 }
 
-func (r *InMemoryRepository) Create(_ context.Context, input CreateUserRequest) (User, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	status := input.Status
-	if status == "" {
-		status = StatusActive
-	}
-
-	u := User{
-		UserID:    uuid.New(),
+func (r *PostgresRepository) Create(ctx context.Context, input CreateUserRequest) (User, error) {
+	row, err := r.q.CreateUser(ctx, db.CreateUserParams{
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Email:     input.Email,
-		Phone:     input.Phone,
-		Age:       input.Age,
-		Status:    status,
+		Phone:     toNullString(input.Phone),
+		Age:       toNullInt32(input.Age),
+		Status:    resolveStatus(input.Status),
+	})
+	if err != nil {
+		return User{}, err
 	}
-	r.users[u.UserID] = u
-	return u, nil
+	return fromDBUser(row), nil
 }
 
-func (r *InMemoryRepository) GetByID(_ context.Context, id uuid.UUID) (User, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	u, ok := r.users[id]
-	if !ok {
-		return User{}, ErrNotFound
+func (r *PostgresRepository) GetByID(ctx context.Context, id uuid.UUID) (User, error) {
+	row, err := r.q.GetUserByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return User{}, ErrNotFound
+		}
+		return User{}, err
 	}
-	return u, nil
+	return fromDBUser(row), nil
 }
 
-func (r *InMemoryRepository) List(_ context.Context) ([]User, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	out := make([]User, 0, len(r.users))
-	for _, u := range r.users {
-		out = append(out, u)
+func (r *PostgresRepository) List(ctx context.Context) ([]User, error) {
+	rows, err := r.q.ListUsers(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return out, nil
+
+	users := make([]User, 0, len(rows))
+	for _, row := range rows {
+		users = append(users, fromDBUser(row))
+	}
+	return users, nil
 }
 
-func (r *InMemoryRepository) Update(_ context.Context, id uuid.UUID, input UpdateUserRequest) (User, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	_, ok := r.users[id]
-	if !ok {
-		return User{}, ErrNotFound
-	}
-
-	status := input.Status
-	if status == "" {
-		status = StatusActive
-	}
-
-	u := User{
+func (r *PostgresRepository) Update(ctx context.Context, id uuid.UUID, input UpdateUserRequest) (User, error) {
+	row, err := r.q.UpdateUser(ctx, db.UpdateUserParams{
 		UserID:    id,
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Email:     input.Email,
-		Phone:     input.Phone,
-		Age:       input.Age,
-		Status:    status,
+		Phone:     toNullString(input.Phone),
+		Age:       toNullInt32(input.Age),
+		Status:    resolveStatus(input.Status),
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return User{}, ErrNotFound
+		}
+		return User{}, err
 	}
-	r.users[id] = u
-	return u, nil
+	return fromDBUser(row), nil
 }
 
-func (r *InMemoryRepository) Delete(_ context.Context, id uuid.UUID) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if _, ok := r.users[id]; !ok {
-		return ErrNotFound
+func (r *PostgresRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	if _, err := r.q.GetUserByID(ctx, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		}
+		return err
 	}
-	delete(r.users, id)
-	return nil
+	return r.q.DeleteUser(ctx, id)
+}
+
+func fromDBUser(u db.User) User {
+	var age *int
+	if u.Age.Valid {
+		v := int(u.Age.Int32)
+		age = &v
+	}
+
+	phone := ""
+	if u.Phone.Valid {
+		phone = u.Phone.String
+	}
+
+	return User{
+		UserID:    u.UserID,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Email:     u.Email,
+		Phone:     phone,
+		Age:       age,
+		Status:    u.Status,
+	}
+}
+
+func toNullString(v string) sql.NullString {
+	if v == "" {
+		return sql.NullString{}
+	}
+	return sql.NullString{String: v, Valid: true}
+}
+
+func toNullInt32(v *int) sql.NullInt32 {
+	if v == nil {
+		return sql.NullInt32{}
+	}
+	return sql.NullInt32{Int32: int32(*v), Valid: true}
+}
+
+func resolveStatus(status string) string {
+	if status == "" {
+		return StatusActive
+	}
+	return status
 }
