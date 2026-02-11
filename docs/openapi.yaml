@@ -1,0 +1,65 @@
+openapi: 3.0.3
+info:
+  title: User Management API
+  version: 0.1.0
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /users:
+    get:
+      summary: List users
+      responses:
+        '200':
+          description: User list
+    post:
+      summary: Create user
+      responses:
+        '201':
+          description: Created
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not found
+    put:
+      summary: Update user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not found
+    delete:
+      summary: Delete user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: No content
+        '404':
+          description: Not found

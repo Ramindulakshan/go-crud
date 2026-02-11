@@ -1,0 +1,38 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, coverage, and profiling
+*.test
+*.out
+coverage.out
+*.coverprofile
+*.prof
+
+# Go workspace/vendor artifacts
+bin/
+vendor/
+
+# Module download/build caches (if local path used)
+pkg/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
