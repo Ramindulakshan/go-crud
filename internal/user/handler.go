@@ -21,7 +21,7 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Post("/users", h.Create)
 	r.Get("/users/{id}", h.GetByID)
 	r.Get("/users", h.List)
-	r.Put("/users/{id}", h.Update)
+	r.Patch("/users/{id}", h.Update)
 	r.Delete("/users/{id}", h.Delete)
 }
 

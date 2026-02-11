@@ -68,14 +68,50 @@ func (r *PostgresRepository) List(ctx context.Context) ([]User, error) {
 }
 
 func (r *PostgresRepository) Update(ctx context.Context, id uuid.UUID, input UpdateUserRequest) (User, error) {
+	existing, err := r.GetByID(ctx, id)
+	if err != nil {
+		return User{}, err
+	}
+
+	firstName := existing.FirstName
+	if input.FirstName != nil {
+		firstName = *input.FirstName
+	}
+
+	lastName := existing.LastName
+	if input.LastName != nil {
+		lastName = *input.LastName
+	}
+
+	email := existing.Email
+	if input.Email != nil {
+		email = *input.Email
+	}
+
+	phone := existing.Phone
+	if input.Phone != nil {
+		phone = *input.Phone
+	}
+
+	age := existing.Age
+	if input.Age != nil {
+		v := *input.Age
+		age = &v
+	}
+
+	status := existing.Status
+	if input.Status != nil {
+		status = *input.Status
+	}
+
 	row, err := r.q.UpdateUser(ctx, db.UpdateUserParams{
 		UserID:    id,
-		FirstName: input.FirstName,
-		LastName:  input.LastName,
-		Email:     input.Email,
-		Phone:     toNullString(input.Phone),
-		Age:       toNullInt32(input.Age),
-		Status:    resolveStatus(input.Status),
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+		Phone:     toNullString(phone),
+		Age:       toNullInt32(age),
+		Status:    resolveStatus(status),
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

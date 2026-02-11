@@ -57,7 +57,7 @@ Create a REST API that allows:
   - Valid Email Format
 - phone (String)
   - Optional
-  - Valid Phone Number
+  - Valid E.164 Phone Number (example: +14155552671)
 - age (Integer)
   - Optional
   - Positive Integer
@@ -72,7 +72,7 @@ Create a REST API that allows:
 - POST /users -> Create user
 - GET /users/{id} -> Retrieve user
 - GET /users -> List all users
-- PUT /users/{id} -> Update user
+- PATCH /users/{id} -> Update user
 - DELETE /users/{id} -> Delete user
 
 ------------------------------------------------------------------------
@@ -95,8 +95,8 @@ Create a REST API that allows:
 ## 2.5 OpenAPI + Swagger
 
 - OpenAPI spec file: `docs/openapi.yaml`
-- Swagger UI endpoint: `/swagger/`
-- Raw OpenAPI spec endpoint: `/swagger/openapi.yaml`
+- Swagger UI endpoint: `/doc/`
+- Raw OpenAPI spec endpoint: `/doc/openapi.yaml`
 
 ------------------------------------------------------------------------
 
@@ -187,4 +187,13 @@ DB -> Repository -> Service -> Handler -> Response
 4. `go run ./cmd/server`
 
 Swagger:
-- `http://localhost:8080/swagger/`
+- `http://localhost:8080/doc/`
+
+------------------------------------------------------------------------
+
+# Test Steps
+
+1. Run unit tests:
+   - `go test ./internal/user -v`
+2. Run integration tests (with PostgreSQL running):
+   - `TEST_DATABASE_URL="host=localhost port=5432 user=postgres password=postgres dbname=usersdb sslmode=disable" go test ./internal/http -run Integration -v`

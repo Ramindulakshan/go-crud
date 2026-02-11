@@ -11,7 +11,7 @@ User Management REST API in Go with layered architecture:
 - `sqlc` config in `sqlc.yaml`
 - Startup migration for users table
 - OpenAPI spec in `docs/openapi.yaml`
-- Swagger UI at `/swagger`
+- Swagger UI at `/doc`
 
 ## Run locally
 
@@ -38,8 +38,8 @@ API base URL: `http://localhost:8080`
 
 ## Swagger
 
-- UI: `http://localhost:8080/swagger/`
-- Spec: `http://localhost:8080/swagger/openapi.yaml`
+- UI: `http://localhost:8080/doc/`
+- Spec: `http://localhost:8080/doc/openapi.yaml`
 
 ## sqlc notes
 
@@ -59,5 +59,19 @@ sqlc generate
 - `POST /users`
 - `GET /users`
 - `GET /users/{id}`
-- `PUT /users/{id}`
+- `PATCH /users/{id}`
 - `DELETE /users/{id}`
+
+## Testing
+
+- Unit tests:
+
+```bash
+go test ./internal/user -v
+```
+
+- Integration tests (requires reachable PostgreSQL):
+
+```bash
+TEST_DATABASE_URL="host=localhost port=5432 user=postgres password=postgres dbname=usersdb sslmode=disable" go test ./internal/http -run Integration -v
+```

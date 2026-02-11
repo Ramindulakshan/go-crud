@@ -22,11 +22,11 @@ func NewRouter(userHandler *user.Handler) http.Handler {
 		_, _ = w.Write([]byte("ok"))
 	})
 
-	r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
+	r.Get("/doc", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/doc/", http.StatusMovedPermanently)
 	})
-	r.Get("/swagger/", docs.SwaggerUIHandler())
-	r.Get("/swagger/openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/doc/", docs.SwaggerUIHandler())
+	r.Get("/doc/openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "docs/openapi.yaml")
 	})
 

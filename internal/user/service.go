@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
@@ -34,6 +35,9 @@ func (s *Service) List(ctx context.Context) ([]User, error) {
 func (s *Service) Update(ctx context.Context, id uuid.UUID, input UpdateUserRequest) (User, error) {
 	if err := s.validate.Struct(input); err != nil {
 		return User{}, err
+	}
+	if !input.HasUpdates() {
+		return User{}, errors.New("at least one field must be provided")
 	}
 	return s.repo.Update(ctx, id, input)
 }
